@@ -21,8 +21,13 @@ from javax.swing import JMenu
 from javax.swing import AbstractAction
 from javax.swing import JTabbedPane
 from javax.swing import JFileChooser
+from javax.swing import JPanel
+from javax.swing import JTextField
+from javax.swing import JLabel
 from java.awt.event import WindowAdapter
 from java.io import File
+from java.awt import GridBagLayout
+from java.awt import GridBagConstraints
 
 class OpenAction(AbstractAction):
     def __init__(self, frame):
@@ -32,7 +37,7 @@ class OpenAction(AbstractAction):
     def actionPerformed(self, event):
         fileChooser = JFileChooser()
         if fileChooser.showOpenDialog(None) == JFileChooser.APPROVE_OPTION:
-            self.frame.contentPane.addTab(fileChooser.selectedFile.name, panel.ProfelisPanel(fileChooser.selectedFile.absolutePath))
+            self.frame.contentPane.addTab(fileChooser.selectedFile.name[:fileChooser.selectedFile.name.rfind(".")], panel.ProfelisPanel(self, fileChooser.selectedFile.absolutePath[:fileChooser.selectedFile.absolutePath.rfind(".")]))
 
 class CloseAction(AbstractAction):
     def __init__(self, frame):
@@ -55,8 +60,8 @@ class ProfelisWindowAdapter(WindowAdapter):
         self.frame = frame
 
     def windowClosed(self, event):
-        for index in range(self.frame.contentPane.tabCount):
-            self.frame.contentPane.getComponentAt(index).markButtonLabelerTimer.stop()
+        for index in range(self.frame.projects.tabCount):
+            self.frame.projects.getComponentAt(index).markButtonLabelerTimer.stop()
         self.frame.running = False
 
     def windowClosing(self, event):
@@ -77,6 +82,35 @@ class ProfelisFrame(JFrame):
 
         self.setJMenuBar(menuBar)
 
-        self.contentPane = JTabbedPane()
+        self.contentPane = JPanel()
+        self.contentPane.layout = GridBagLayout()
+        constraints = GridBagConstraints()
 
-        self.contentPane.addTab("Phi-4-1.art", panel.ProfelisPanel("/Users/mbsulli/neofelis/genomes/Phi-4-1.art"))
+        self.blastLocation = JTextField("/Users/mbsulli/blast")
+        self.databaseLocation = JTextField("/Users/mbsulli/blast/db")
+        self.projects = JTabbedPane()
+        
+        constraints.gridx, constraints.gridy = 0, 0
+        constraints.gridwidth, constraints.gridheight = 1, 1
+        constraints.fill = GridBagConstraints.NONE
+        constraints.weightx, constraints.weighty = 0, 0
+        self.contentPane.add(JLabel("Blast Location"), constraints)
+        constraints.gridx, constraints.gridy = 1, 0
+        constraints.fill = GridBagConstraints.HORIZONTAL
+        constraints.weightx, constraints.weighty = 1, 0
+        self.contentPane.add(self.blastLocation, constraints)
+        constraints.gridx, constraints.gridy = 2, 0
+        constraints.fill = GridBagConstraints.NONE
+        constraints.weightx, constraints.weighty = 0, 0
+        self.contentPane.add(JLabel("Database Location"), constraints)
+        constraints.gridx, constraints.gridy = 3, 0
+        constraints.fill = GridBagConstraints.HORIZONTAL
+        constraints.weightx, constraints.weighty = 1, 0
+        self.contentPane.add(self.databaseLocation, constraints)
+        constraints.gridx, constraints.gridy = 0, 1
+        constraints.gridwidth, constraints.gridheight = 4, 1
+        constraints.fill = GridBagConstraints.BOTH
+        constraints.weightx, constraints.weighty = 1, 1
+        self.contentPane.add(self.projects, constraints)
+
+        self.projects.addTab("Phi-4-1", panel.ProfelisPanel(self, "/Users/mbsulli/neofelis/genomes/Phi-4-1"))

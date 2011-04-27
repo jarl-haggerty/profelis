@@ -185,9 +185,9 @@ class Iteration:
   """
   A structure for holding information about a gene's blast result.
   """
-  def __init__(self):
+  def __init__(self, location = []):
     self.query =           None
-    self.location =        []
+    self.location =        location
     self.numHits =         0
     self.bitScore =        0
     self.eValue =          Double.POSITIVE_INFINITY
@@ -199,22 +199,36 @@ class Iteration:
     self.note =            ""
     self.color =           "0 255 255"
     self.intergenic =      False
+    self.xmlFile =         None
+    self.selected =        False
+    self.remove =          False
     
   def __str__(self):
-    result = "<"
-    result += "Query = " + str(self.query) + ", "
-    result += "Location = " + str(self.location) + ", "
-    result += "NumHits = " + str(self.numHits) + ", "
-    result += "BitScore = " + str(self.bitScore) + ", "
-    result += "EValue = " + str(self.eValue) + ", "
-    result += "Identity = " + str(self.identity) + ", "
-    result += "AlignmentLength = " + str(self.alignmentLength) + ", "
-    result += "ID = " + str(self.id) + ", "
-    result += "Title = " + str(self.title) + ", "
-    result += "Organism = " + str(self.organism) + ", "
+    result = ""
+    result += "Query = " + str(self.query) + "\n"
+    result += "Location = " + str(self.location) + "\n"
+    result += "NumHits = " + str(self.numHits) + "\n"
+    result += "BitScore = " + str(self.bitScore) + "\n"
+    result += "EValue = " + str(self.eValue) + "\n"
+    result += "Identity = " + str(self.identity) + "\n"
+    result += "AlignmentLength = " + str(self.alignmentLength) + "\n"
+    result += "ID = " + str(self.id) + "\n"
+    result += "Title = " + str(self.title) + "\n"
+    result += "Organism = " + str(self.organism) + "\n"
     result += "Intergenic = " + str(self.intergenic)
-    result += ">"
     return result
+
+  def toArtemis(self):
+    locationString = "..".join(map(str, self.location))
+    if self.location[0] < self.location[1]:
+      locationString = "     CDS             " + locationString
+    else:
+      locationString = "     CDS             complement(" + locationString + ")"
+
+    return locationString + "\n" + \
+           "                     /gene=\"" + self.title + "\"\n" + \
+           "                     /note=\"" + self.note + "\"\n" + \
+           "                     /colour=" + self.color + "\n"
 
 class Hit:
   """
@@ -319,6 +333,10 @@ class BlastHandler(DefaultHandler):
       self.hsps[-1].identity = float(self.text)
     elif self.tag == "Hsp_align-len":
       self.hsps[-1].alignmentLength = int(self.text)
+    elif self.tag == "BlastOutput_db":
+      self.database = os.path.split(self.text)[1]
+    elif self.tag == "Parameters_expect":
+      self.evalue = float(self.text)
 
   def characters(self, raw, start, length):
     """
@@ -335,13 +353,15 @@ def parseBlast(fileName):
   A function for parsing XML blast output.
   """
   reader = XMLReaderFactory.createXMLReader()
-  reader.setContentHandler(BlastHandler())
-  reader.setEntityResolver(BlastHandler())
+  reader.contentHandler = BlastHandler()
+  reader.entityResolver = BlastHandler()
   reader.parse(fileName)
 
-  return dict(map(lambda iteration: (iteration.query, iteration), reader.getContentHandler().iterations))
+  for iteration in reader.contentHandler.iterations:
+    iteration.xmlFile = fileName 
+  return reader.contentHandler.database, reader.contentHandler.evalue, reader.contentHandler.iterations
 
-def cachedBlast(fileName, blastLocation, database, eValue, query, pipeline, remote = False, force = False):
+def cachedBlast(fileName, blastLocation, database, eValue, query, pipeline, force = False):
   """
   Performs a blast search using the blastp executable and database in blastLocation on
   the query with the eValue.  The result is an XML file saved to fileName.  If fileName
@@ -352,15 +372,11 @@ def cachedBlast(fileName, blastLocation, database, eValue, query, pipeline, remo
     command = [blastLocation + "/bin/blastp",
                "-evalue", str(eValue),
                "-outfmt", "5",
-               "-query", query]
-    if remote:
-      command += ["-remote",
-                  "-db", database]
-    else:
-      command += ["-num_threads", str(Runtime.getRuntime().availableProcessors()),
-                  "-db", database]
+               "-query", query,
+               "-num_threads", str(Runtime.getRuntime().availableProcessors()),
+               "-db", database]
     blastProcess = subprocess.Popen(command,
-                                      stdout = output)
+                                    stdout = output)
     while blastProcess.poll() == None:
       if pipeline.exception:
         print "Stopping in blast"
