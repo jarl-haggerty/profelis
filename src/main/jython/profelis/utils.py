@@ -386,12 +386,14 @@ def cachedBlast(fileName, blastLocation, database, eValue, query, pipeline, forc
           subprocess.Popen(["kill", "-9", re.split(r"\s+", line)[1]])
         output.close()
         raise pipeline.exception
+    if blastProcess.poll() != 0:
+      raise OSError()
     output.close()
   try:
     return parseBlast(fileName)
   except SAXParseException:
     print 'Retry'
-    return cachedBlast(fileName, blastLocation, database, eValue, query, pipeline, remote, True)
+    return cachedBlast(fileName, blastLocation, database, eValue, query, pipeline, True)
 
 def getGCContent(genome):
   """

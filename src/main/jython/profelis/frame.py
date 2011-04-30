@@ -24,10 +24,39 @@ from javax.swing import JFileChooser
 from javax.swing import JPanel
 from javax.swing import JTextField
 from javax.swing import JLabel
+from javax.swing import JButton
 from java.awt.event import WindowAdapter
 from java.io import File
 from java.awt import GridBagLayout
 from java.awt import GridBagConstraints
+
+class BlastAction(AbstractAction):
+      """
+      Action for selecting the location of Blast+.  Brings up a file selection dialog and fills the text field for blast with the selection.
+      """
+      def __init__(self, frame):
+        self.frame = frame
+        AbstractAction.__init__(self, "...")
+
+      def actionPerformed(self, event):
+        fileChooser = JFileChooser()
+        fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+        if fileChooser.showOpenDialog(None) == JFileChooser.APPROVE_OPTION:
+          self.frame.blastLocation.text = fileChooser.selectedFile.absolutePath
+
+class DatabaseAction(AbstractAction):
+      """
+      Action for selecting the location of Blast Databases.  Brings up a file selection dialog and fills the text field for blast with the selection.
+      """
+      def __init__(self, frame):
+        self.frame = frame
+        AbstractAction.__init__(self, "...")
+
+      def actionPerformed(self, event):
+        fileChooser = JFileChooser()
+        fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+        if fileChooser.showOpenDialog(None) == JFileChooser.APPROVE_OPTION:
+          self.frame.databaseLocation.text = fileChooser.selectedFile.absolutePath
 
 class OpenAction(AbstractAction):
     def __init__(self, frame):
@@ -37,7 +66,7 @@ class OpenAction(AbstractAction):
     def actionPerformed(self, event):
         fileChooser = JFileChooser()
         if fileChooser.showOpenDialog(None) == JFileChooser.APPROVE_OPTION:
-            self.frame.contentPane.addTab(fileChooser.selectedFile.name[:fileChooser.selectedFile.name.rfind(".")], panel.ProfelisPanel(self, fileChooser.selectedFile.absolutePath[:fileChooser.selectedFile.absolutePath.rfind(".")]))
+            self.frame.projects.addTab(fileChooser.selectedFile.name[:fileChooser.selectedFile.name.rfind(".")], panel.ProfelisPanel(self.frame, fileChooser.selectedFile.absolutePath[:fileChooser.selectedFile.absolutePath.rfind(".")]))
 
 class CloseAction(AbstractAction):
     def __init__(self, frame):
@@ -102,13 +131,21 @@ class ProfelisFrame(JFrame):
         constraints.gridx, constraints.gridy = 2, 0
         constraints.fill = GridBagConstraints.NONE
         constraints.weightx, constraints.weighty = 0, 0
-        self.contentPane.add(JLabel("Database Location"), constraints)
+        self.contentPane.add(JButton(BlastAction(self)), constraints)
         constraints.gridx, constraints.gridy = 3, 0
+        constraints.fill = GridBagConstraints.NONE
+        constraints.weightx, constraints.weighty = 0, 0
+        self.contentPane.add(JLabel("Database Location"), constraints)
+        constraints.gridx, constraints.gridy = 4, 0
         constraints.fill = GridBagConstraints.HORIZONTAL
         constraints.weightx, constraints.weighty = 1, 0
         self.contentPane.add(self.databaseLocation, constraints)
+        constraints.gridx, constraints.gridy = 5, 0
+        constraints.fill = GridBagConstraints.NONE
+        constraints.weightx, constraints.weighty = 0, 0
+        self.contentPane.add(JButton(DatabaseAction(self)), constraints)
         constraints.gridx, constraints.gridy = 0, 1
-        constraints.gridwidth, constraints.gridheight = 4, 1
+        constraints.gridwidth, constraints.gridheight = 6, 1
         constraints.fill = GridBagConstraints.BOTH
         constraints.weightx, constraints.weighty = 1, 1
         self.contentPane.add(self.projects, constraints)

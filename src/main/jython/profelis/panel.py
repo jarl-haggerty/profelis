@@ -25,7 +25,6 @@ from java.awt import GridBagLayout
 from java.awt import GridBagConstraints
 from java.awt.event import ActionListener
 
-
 class NewGeneActionListener(ActionListener):
     def __init__(self, panel):
         self.panel = panel
@@ -66,12 +65,15 @@ class AddGenesAction(AbstractAction):
         except OSError:
             self.panel.frame.blastLocation.background = Color.red
             self.panel.frame.databaseLocation.background = Color.red
+            return
 
         genes = utils.parseBlast("profelis.query.blastp.xml")[2]
         self.panel.outGenes.model.clear()
-        [self.panel.inGenes.model.addElement(gene) for gene in genes]
+        [self.panel.inGenes.model.add(0, gene) for gene in genes[::-1]]
 
         xml.addGenes(self.panel.name + ".blastp.xml", "profelis.query.blastp.xml")
+        xml.writeHTML(self.panel.name + ".blastp.xml")
+        self.panel.writeArtemisFile()
         
 class RemoveAction(AbstractAction):
     def __init__(self, panel):
@@ -88,15 +90,8 @@ class RemoveAction(AbstractAction):
                 index += 1
 
         xml.deleteGenes(self.panel.name + ".blastp.xml", removed)
-
-        output = open(self.panel.name + ".art", "w")
-        output.write(self.panel.restOfFile)
-        for element in self.panel.inGenes.model.elements():
-            output.write(element.toArtemis())
-        output.write("\nORIGIN\n\n")
-        for i in range(0, len(self.panel.genome), 50):
-            output.write(self.panel.genome[i:min(i+50, len(self.panel.genome))] + "\n")
-        output.close()        
+        xml.writeHTML(self.panel.name + ".blastp.xml")
+        self.panel.writeArtemisFile()
 
 class MarkForRemovalListener(ActionListener):
     def __init__(self, panel):
@@ -256,5 +251,15 @@ class ProfelisPanel(JPanel):
                 
         self.genome = "".join(self.genome)
         self.restOfFile = "".join(self.restOfFile)
+
+    def writeArtemisFile(self):
+        output = open(self.name + ".art", "w")
+        output.write(self.restOfFile)
+        for element in self.inGenes.model.elements():
+            output.write(element.toArtemis())
+        output.write("\nORIGIN\n\n")
+        for i in range(0, len(self.genome), 50):
+            output.write(self.genome[i:min(i+50, len(self.genome))] + "\n")
+        output.close()
             
                 
