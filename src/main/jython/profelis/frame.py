@@ -29,6 +29,7 @@ from java.awt.event import WindowAdapter
 from java.io import File
 from java.awt import GridBagLayout
 from java.awt import GridBagConstraints
+from java.lang import System
 
 class BlastAction(AbstractAction):
       """
@@ -115,8 +116,8 @@ class ProfelisFrame(JFrame):
         self.contentPane.layout = GridBagLayout()
         constraints = GridBagConstraints()
 
-        self.blastLocation = JTextField("/Users/mbsulli/blast")
-        self.databaseLocation = JTextField("/Users/mbsulli/blast/db")
+        self.blastLocation = JTextField(System.getProperty("user.home") + "/blast")
+        self.databaseLocation = JTextField(System.getProperty("user.home") + "/blast/db")
         self.projects = JTabbedPane()
         
         constraints.gridx, constraints.gridy = 0, 0
@@ -150,4 +151,4 @@ class ProfelisFrame(JFrame):
         constraints.weightx, constraints.weighty = 1, 1
         self.contentPane.add(self.projects, constraints)
 
-        self.projects.addTab("Phi-4-1", panel.ProfelisPanel(self, "/Users/mbsulli/neofelis/genomes/Phi-4-1"))
+        #self.projects.addTab("Phi-4-1", panel.ProfelisPanel(self, "/Users/mbsulli/neofelis/genomes/Phi-4-1"))
